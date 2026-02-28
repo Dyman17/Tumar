@@ -76,6 +76,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add fallback route for /static when dist doesn't exist
+@app.get("/static")
+async def static_fallback():
+    dist_dir = "static/scene-insight-hub-91-main/dist"
+    if os.path.exists(dist_dir):
+        # If dist exists, serve index.html
+        index_file = os.path.join(dist_dir, "index.html")
+        if os.path.exists(index_file):
+            with open(index_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return HTMLResponse(content)
+    
+    # Show building page
+    return HTMLResponse("""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tumar AI - Building...</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .loader { border: 8px solid #f3f3f3; border-top: 8px solid #3498db; 
+                  border-radius: 50%; width: 60px; height: 60px; 
+                  animation: spin 2s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <h1>🛡️ Tumar AI</h1>
+    <div class="loader"></div>
+    <h2>Building Frontend...</h2>
+    <p>Please wait while we build the application. This may take a few minutes.</p>
+    <p><small>Frontend build status: <span id="status">In Progress</span></small></p>
+    <script>
+        setTimeout(() => location.reload(), 10000);
+    </script>
+</body>
+</html>
+    """)
+
 current_data = {
     'timestamp': 0,
     'video_frame': '',
