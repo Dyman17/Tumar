@@ -51,9 +51,9 @@ python laptop_client_local.py
 - **GitHub**: github.com/Dyman17/Tumar
 - **Live Demo**: (после деплоя на Render)
 - **AI Space**: (будет добавлено)
-- **Документация**: https://docs.google.com/document/d/1uFYYEYVK3vIKw2wSqitm5qZAnP1a-zuy/edit?usp=drive_link&ouid=116531594202173068050&rtpof=true&sd=true
-- **Видео**: https://drive.google.com/file/d/1kR9ye-Li881-UkIns3klwId_JELpqmEh/view?usp=drive_link
-- **Презентация**: (будет добавлена)
+- **Документация**: https://docs.google.com/document/d/15lEm5cDuVFd6upokFgxD8G9AULAJ6Tpv/edit?usp=drive_link&ouid=105976109161548568513&rtpof=true&sd=true
+- **Видео**: https://drive.google.com/file/d/1i6DcwAVJpQP6UDelnrVzAzn17rnF3UQO/view?usp=drive_link
+- **Презентация**: https://drive.google.com/file/d/1CZaoNntZySBxQBdpLxqp52R2VMs3zOwb/view?usp=drive_link
 
 ## 🔧 Деплой на Render.com
 1. Fork репозитория
