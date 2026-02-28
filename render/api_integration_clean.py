@@ -8,7 +8,7 @@ from typing import Dict, List
 import time
 from datetime import datetime
 
-app = FastAPI(title="SafeQunar API", version="1.0.0")
+app = FastAPI(title="Tumar AI API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -44,7 +44,7 @@ laptop_client: WebSocket = None
 risk_history = []
 system_start_time = time.time()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="static/scene-insight-hub-91-main"), name="static")
 
 @app.get("/")
 async def root():
@@ -53,10 +53,10 @@ async def root():
 <html>
 <head>
     <meta http-equiv="refresh" content="0; url=/static/">
-    <title>SafeQunar - Redirecting...</title>
+    <title>Tumar AI - Redirecting...</title>
 </head>
 <body>
-    <h1>Redirecting to SafeQunar Dashboard...</h1>
+    <h1>Redirecting to Tumar AI Dashboard...</h1>
     <p>If not redirected, <a href="/static/">click here</a></p>
 </body>
 </html>
