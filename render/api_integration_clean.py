@@ -14,22 +14,54 @@ import subprocess
 # Build frontend on startup
 def build_frontend():
     frontend_dir = "static/scene-insight-hub-91-main"
+    dist_dir = f"{frontend_dir}/dist"
+    
+    # Create dist directory if it doesn't exist
+    if not os.path.exists(dist_dir):
+        os.makedirs(dist_dir)
+        print(f"Created dist directory: {dist_dir}")
+    
     if os.path.exists(frontend_dir):
         print("Building frontend...")
         try:
-            result = subprocess.run(
-                ["npm", "run", "build"],
+            # Install dependencies first
+            install_result = subprocess.run(
+                ["npm", "install"],
                 cwd=frontend_dir,
                 capture_output=True,
                 text=True,
                 timeout=300
             )
-            if result.returncode == 0:
+            
+            if install_result.returncode != 0:
+                print(f"npm install failed: {install_result.stderr}")
+                return False
+            
+            print("npm install successful!")
+            
+            # Build the project
+            build_result = subprocess.run(
+                ["npx", "vite", "build"],
+                cwd=frontend_dir,
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
+            
+            if build_result.returncode == 0:
                 print("Frontend build successful!")
+                print(f"Dist contents: {os.listdir(dist_dir)}")
+                return True
             else:
-                print(f"Frontend build failed: {result.stderr}")
+                print(f"Frontend build failed: {build_result.stderr}")
+                return False
+                
         except Exception as e:
             print(f"Build error: {e}")
+            return False
+    else:
+        print(f"Frontend directory not found: {frontend_dir}")
+        return False
 
 # Build frontend on startup
 build_frontend()
@@ -70,11 +102,19 @@ laptop_client: WebSocket = None
 risk_history = []
 system_start_time = time.time()
 
-app.mount("/static", StaticFiles(directory="static/scene-insight-hub-91-main/dist", html=True), name="static")
+# Mount static files only if dist exists
+dist_dir = "static/scene-insight-hub-91-main/dist"
+if os.path.exists(dist_dir):
+    app.mount("/static", StaticFiles(directory=dist_dir, html=True), name="static")
+    print(f"Static files mounted from: {dist_dir}")
+else:
+    print(f"Warning: {dist_dir} not found. Frontend will not be served.")
 
 @app.get("/")
 async def root():
-    return HTMLResponse("""
+    # Check if frontend is built
+    if os.path.exists("static/scene-insight-hub-91-main/dist"):
+        return HTMLResponse("""
 <!DOCTYPE html>
 <html>
 <head>
@@ -86,7 +126,33 @@ async def root():
     <p>If not redirected, <a href="/static/">click here</a></p>
 </body>
 </html>
-    """)
+        """)
+    else:
+        return HTMLResponse("""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tumar AI - Building...</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .loader { border: 8px solid #f3f3f3; border-top: 8px solid #3498db; 
+                  border-radius: 50%; width: 60px; height: 60px; 
+                  animation: spin 2s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <h1>🛡️ Tumar AI</h1>
+    <div class="loader"></div>
+    <h2>Building Frontend...</h2>
+    <p>Please wait while we build the application. This may take a few minutes.</p>
+    <p><small>Frontend build status: <span id="status">In Progress</span></small></p>
+    <script>
+        setTimeout(() => location.reload(), 10000);
+    </script>
+</body>
+</html>
+        """)
 
 @app.get("/api/v1/status")
 async def get_status():
@@ -94,7 +160,7 @@ async def get_status():
     
     return JSONResponse({
         "status": "online",
-        "service": "SafeQunar AI Monitor",
+        "service": "Tumar AI Monitor",
         "version": "1.0.0",
         "timestamp": current_data['timestamp'],
         "connection_status": current_data['connection_status'],
