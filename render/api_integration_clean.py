@@ -8,6 +8,32 @@ from typing import Dict, List
 import time
 from datetime import datetime
 
+import os
+import subprocess
+
+# Build frontend on startup
+def build_frontend():
+    frontend_dir = "static/scene-insight-hub-91-main"
+    if os.path.exists(frontend_dir):
+        print("Building frontend...")
+        try:
+            result = subprocess.run(
+                ["npm", "run", "build"],
+                cwd=frontend_dir,
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
+            if result.returncode == 0:
+                print("Frontend build successful!")
+            else:
+                print(f"Frontend build failed: {result.stderr}")
+        except Exception as e:
+            print(f"Build error: {e}")
+
+# Build frontend on startup
+build_frontend()
+
 app = FastAPI(title="Tumar AI API", version="1.0.0")
 
 app.add_middleware(
@@ -44,7 +70,7 @@ laptop_client: WebSocket = None
 risk_history = []
 system_start_time = time.time()
 
-app.mount("/static", StaticFiles(directory="static/scene-insight-hub-91-main"), name="static")
+app.mount("/static", StaticFiles(directory="static/scene-insight-hub-91-main/dist", html=True), name="static")
 
 @app.get("/")
 async def root():
