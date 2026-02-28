@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple AI Monitor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .video-container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .video-stream {
+            max-width: 320px;
+            border: 2px solid #444;
+            border-radius: 5px;
+        }
+        
+        .risk-container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .risk-bar {
+            width: 100%;
+            height: 30px;
+            background: #333;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .risk-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #FFC107, #f44336);
+            transition: width 0.3s ease;
+        }
+        
+        .risk-score {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .risk-normal { color: #4CAF50; }
+        .risk-monitor { color: #FFC107; }
+        .risk-alert { color: #f44336; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-normal { background: #4CAF50; }
+        .status-monitor { background: #FFC107; }
+        .status-alert { background: #f44336; }
+        
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .connected { color: #4CAF50; }
+        .disconnected { color: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Simple AI Monitor</h1>
+            <p>Real-time Scene Analysis</p>
+        </div>
+        
+        <div class="video-container">
+            <img id="videoStream" class="video-stream" src="" alt="AI video stream">
+            <div style="margin-top: 10px;">
+                <span id="fpsDisplay">FPS: 0.0</span>
+            </div>
+        </div>
+        
+        <div class="risk-container">
+            <h3>Risk Assessment</h3>
+            <div class="risk-bar">
+                <div id="riskFill" class="risk-fill" style="width: 0%"></div>
+            </div>
+            <div id="riskScore" class="risk-score risk-normal">0.00 - NORMAL</div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="vehiclesCount">0</div>
+                <div>Vehicles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="personsCount">0</div>
+                <div>Persons</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgSpeed">0.0</div>
+                <div>Avg Speed (m/s)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="convoyStatus">NO</div>
+                <div>Convoy</div>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="thermalStatus">NO</div>
+                <div>Thermal Activity</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="frameId">0</div>
+                <div>Frame ID</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="connection-status">
+        <span id="statusIndicator" class="status-indicator disconnected"></span>
+        <span id="connectionText">Disconnected</span>
+    </div>
+
+    <script>
+        let ws;
+        let reconnectInterval;
+        
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8000');
+            
+            ws.onopen = function() {
+                console.log('Connected to AI server');
+                updateConnectionStatus(true);
+                
+                if (reconnectInterval) {
+                    clearInterval(reconnectInterval);
+                    reconnectInterval = null;
+                }
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateDashboard(data);
+            };
+            
+            ws.onclose = function() {
+                console.log('Disconnected from AI server');
+                updateConnectionStatus(false);
+                
+                // Попытка переподключения через 3 секунды
+                if (!reconnectInterval) {
+                    reconnectInterval = setInterval(connectWebSocket, 3000);
+                }
+            };
+            
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+        }
+        
+        function updateDashboard(data) {
+            // Обновляем видео
+            if (data.video_frame) {
+                document.getElementById('videoStream').src = 'data:image/jpeg;base64,' + data.video_frame;
+            }
+            
+            // Обновляем риск
+            updateRiskDisplay(data.risk_score, data.risk_level);
+            
+            // Обновляем статистику
+            updateStats(data.scene);
+            
+            // Обновляем FPS
+            document.getElementById('fpsDisplay').textContent = `FPS: ${data.fps.toFixed(1)}`;
+            
+            // Обновляем frame ID
+            document.getElementById('frameId').textContent = data.frame_id;
+        }
+        
+        function updateRiskDisplay(score, level) {
+            const riskScore = document.getElementById('riskScore');
+            const riskFill = document.getElementById('riskFill');
+            
+            // Обновляем текст
+            riskScore.textContent = `${score.toFixed(2)} - ${level}`;
+            
+            // Обновляем цвет
+            riskScore.className = 'risk-score';
+            if (level === 'NORMAL') {
+                riskScore.classList.add('risk-normal');
+            } else if (level === 'MONITOR') {
+                riskScore.classList.add('risk-monitor');
+            } else {
+                riskScore.classList.add('risk-alert');
+            }
+            
+            // Обновляем полосу
+            riskFill.style.width = `${score * 100}%`;
+        }
+        
+        function updateStats(scene) {
+            document.getElementById('vehiclesCount').textContent = scene.vehicles;
+            document.getElementById('personsCount').textContent = scene.persons;
+            document.getElementById('avgSpeed').textContent = scene.avg_speed.toFixed(1);
+            document.getElementById('convoyStatus').textContent = scene.convoy_detected ? 'YES' : 'NO';
+            document.getElementById('thermalStatus').textContent = scene.thermal_active ? 'YES' : 'NO';
+            
+            // Подсветка конвоя
+            const convoyElement = document.getElementById('convoyStatus');
+            if (scene.convoy_detected) {
+                convoyElement.style.color = '#f44336';
+            } else {
+                convoyElement.style.color = '#4CAF50';
+            }
+        }
+        
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('statusIndicator');
+            const text = document.getElementById('connectionText');
+            
+            if (connected) {
+                indicator.className = 'status-indicator connected';
+                text.textContent = 'Connected';
+            } else {
+                indicator.className = 'status-indicator disconnected';
+                text.textContent = 'Disconnected';
+            }
+        }
+        
+        // Запуск
+        window.onload = function() {
+            connectWebSocket();
+        };
+        
+        // Очистка при закрытии
+        window.onbeforeunload = function() {
+            if (ws) {
+                ws.close();
+            }
+            if (reconnectInterval) {
+                clearInterval(reconnectInterval);
+            }
+        };
+    </script>
+</body>
+</html>

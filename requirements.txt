@@ -1,0 +1,28 @@
+# Детекция и трекинг
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+filterpy>=1.4.5
+
+# Веб-сервер и API
+fastapi>=0.104.0
+uvicorn>=0.24.0
+websockets>=12.0
+python-multipart>=0.0.6
+
+# Обработка данных и визуализация
+numpy>=1.24.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+pillow>=10.0.0
+
+# Предсказание траекторий (LSTM/GRU)
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Альтернативные модели (опционально)
+# mediapipe>=0.10.0  # для позы
+# openpifpaf>=0.12.0  # для скелета
+
+# Утилиты
+tqdm>=4.65.0
+python-dotenv>=1.0.0
